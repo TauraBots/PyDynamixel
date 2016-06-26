@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 
-int dxl_hal_open(int *jointSocket, int deviceIndex, float baudrate);
+int dxl_hal_open(int *jointSocket, char* dev_name, float baudrate);
 void dxl_hal_close(int *socket);
 int dxl_hal_set_baud( int socket, float baudrate );
 void dxl_hal_clear(int socket);

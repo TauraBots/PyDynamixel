@@ -16,16 +16,16 @@ float	gfByteTransTime	= 0.0f;
 
 char	gDeviceName[20];
 
-int dxl_hal_open(int *jointSocket, int deviceIndex, float baudrate)
+int dxl_hal_open(int *jointSocket, char *dev_name, float baudrate)
 {
 	struct termios newtio;
 	struct serial_struct serinfo;
-	//speed_t ss = 0;
-	char dev_name[100] = {0, };
+	// speed_t ss = 0;
+	// char dev_name[100] = {0, };
 
 	gSocket_fd = -1;
 
-	sprintf(dev_name, "/dev/ttyS%d", deviceIndex);
+	// sprintf(dev_name, "/dev/ttyUSB%d", deviceIndex);
 
 	strcpy(gDeviceName, dev_name);
 	memset(&newtio, 0, sizeof(newtio));

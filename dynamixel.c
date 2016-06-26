@@ -16,13 +16,13 @@ unsigned char gbRxGetLength = 0;
 int gbCommStatus = COMM_RXSUCCESS;
 int giBusUsing = 0;
 
-int dxl_initialize(int deviceIndex, int baudnum)
+int dxl_initialize(char *dev_name, int baudnum)
 {
         int jointSocket;
 	float baudrate;
 	baudrate = 2000000.0f / (float)(baudnum + 1);
 
-	if( dxl_hal_open(&jointSocket, deviceIndex, baudrate) == 0 )
+	if( dxl_hal_open(&jointSocket, dev_name, baudrate) == 0 )
 		return 0;
 
 	gbCommStatus = COMM_RXSUCCESS;
