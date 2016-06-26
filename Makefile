@@ -3,7 +3,7 @@ all: _pydynamixel.so
 _pydynamixel.so: dxl_hal.o dynamixel.o pydynamixel_wrap.o
 	ld -shared dxl_hal.o dynamixel.o pydynamixel_wrap.o -o _pydynamixel.so
 
-pydynamixel_wrap.o: pydynamixel.i
+pydynamixel_wrap.c: pydynamixel.i
 	swig -python pydynamixel.i
 
 %.o: %.c
