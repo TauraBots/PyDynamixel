@@ -3,7 +3,7 @@ from time import sleep
 from sys import exit
 
 #PORT = "/dev/ttyUSB0" # Serial port
-PORT = "/dev/ttyS5" # Serial port
+PORT = "/dev/ttyS0" # Serial port
 BAUDNUM = 8    # 222kbps baudrate
 TORQUE_ADDR = 0x18 # Address for torque enable
 GOALPOS_ADDR = 0x1E # Address for goal position
@@ -22,8 +22,8 @@ for servo_id in servo_ids:
 
 # Set goal positions
 for i in range(1023):
-    for servo_id in servo_ids:
-        dx.dxl_write_word(socket, servo_id, GOALPOS_ADDR, 4*i)
+    values = [4*i for servo_id in servo_ids]
+    dx.dxl_sync_write_word(socket, GOALPOS_ADDR, servo_ids, values, len(servo_ids))
     sleep(0.001)
 
 # Finish the connection with the socket

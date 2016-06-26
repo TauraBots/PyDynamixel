@@ -354,7 +354,7 @@ void dxl_write_word(int jointSocket, int id, int address, int value )
 }
 
 void dxl_sync_write_word(int jointSocket, int first_address,
-                    int id[], int values[], int total)
+                    int *ids, int *values, int total)
 {
 	while(giBusUsing);
 
@@ -364,8 +364,7 @@ void dxl_sync_write_word(int jointSocket, int first_address,
 	gbInstructionPacket[PARAMETER] = (unsigned char)first_address;
 	short i;
 	for(i = 0; i<total; i++){
-
-		gbInstructionPacket[PARAMETER+i*3+1] = (unsigned char)id[i];
+		gbInstructionPacket[PARAMETER+i*3+1] = (unsigned char)ids[i];
 		gbInstructionPacket[PARAMETER+i*3+2] = (unsigned char)dxl_get_lowbyte(values[i]);
 		gbInstructionPacket[PARAMETER+i*3+3] = (unsigned char)dxl_get_highbyte(values[i]);
 	}
