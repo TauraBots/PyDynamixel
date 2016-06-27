@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import pydynamixel as dxl
 from time import sleep
 from sys import exit
