@@ -4,6 +4,8 @@ from math import pi
 TORQUE_ADDR = 0x18 # Address for torque enable
 CURRPOS_ADDR = 0x24 # Address for the current position
 GOALPOS_ADDR = 0x1E # Address for goal position
+MAXTORQUE_ADDR = 0x0E # Address for maximum torque
+MAXTORQUELIMIT = 767 # Maximum torque possible
 
 class DxlComm(object):
     ''' This class implements low level
@@ -66,13 +68,30 @@ class DxlComm(object):
         dxl.sync_write_word(self.socket, GOALPOS_ADDR,
                 self.joint_ids, values, self.total)
 
+    def sendMaxTorques(self, maxTorque = None):
+
+        ''' Communicates the max torques for all
+        servos connected to this port. Optionally
+        the argument maxTorque can be provided.
+        If provided, the same maxTorque will be
+        set to all attached joints.
+        '''
+
+        if maxTorque:
+            for j in self.joints:
+                j.setMaxTorque(maxTorque)
+
+        values = [j.maxTorque for j in self.joints]
+        dxl.sync_write_word(self.socket, MAXTORQUE_ADDR,
+                self.joint_ids, values, self.total)
+
     def enableTorques(self):
 
         ''' Enable torque for all motors connected
         in this port.
         '''
 
-        values = [1 for i in range(self.total)]
+        values = [1]*self.total
         dxl.sync_write_word(self.socket, TORQUE_ADDR,
                 self.joint_ids, values, self.total)
 
@@ -82,7 +101,7 @@ class DxlComm(object):
         to this port
         '''
 
-        values = [0 for i in range(self.total)]
+        values = [0]*self.total
         dxl.sync_write_word(self.socket, TORQUE_ADDR,
                 self.servo_ids, values, self.total)
     
@@ -109,14 +128,28 @@ class Joint(object):
     goalValue = 0
     currAngle = 0.0
     currValue = 0
+    centerValue = 0
+    maxTorque = 767 # This is the maximum
 
-    def __init__(self, servo_id):
+    def __init__(self, servo_id, centerValue = 0):
 
         ''' The constructor takes the servo id
-        as the argument.
+        as the argument. Argument centerValue
+        can be set to calibrate the zero
+        position of the servo.
         '''
 
         self.servo_id = servo_id
+        self.centerValue = centerValue
+
+    def setCenterValue(self, centerValue):
+
+        ''' Sets the calibration of the zero
+        for the joint. This can also be passed
+        in the constructor.
+        '''
+
+        self.centerValue = centerValue
 
     def setSocket(self, socket):
 
@@ -127,16 +160,41 @@ class Joint(object):
 
         self.socket = socket
 
+    def setMaxTorque(self, maxTorque):
+
+        ''' Sets the maximum torque (does not
+        send it yet!). To send it the method
+        sendMaxTorque() must be called.
+        '''
+
+        self.maxTorque = min(int(maxTorque), MAXTORQUELIMIT)
+
+    def sendMaxTorque(self, maxTorque = None):
+
+        ''' Sends a command to this specific
+        servomotor to set its maximum torque.
+        If the argument maxTorque is not
+        provided, then it sends the last
+        value set using setMaxTorque().
+        '''
+
+        if maxTorque:
+            self.setMaxTorque(maxTorque)
+        dxl.write_word(self.socket, self.servo_id, \
+                MAXTORQUE_ADDR, self.maxTorque)
+
     def setGoalAngle(self, angle):
 
         self.goalAngle = float(angle)
-        self.goalValue = int(4096.0*angle/(2*pi))
+        self.goalValue = int(2048.0*angle/pi) \
+                + self.centerValue
 
     def sendGoalAngle(self, goalAngle = None):
         ''' Sends a command to this specific
-        servomotor alone. If no parameter is
-        passed then it sends the goal angle
-        that was set via setGoalAngle()
+        servomotor to set its goal angle.
+        If no parameter is passed then it
+        sends the goal angle that was set
+        via setGoalAngle()
         '''
 
         if goalAngle:
@@ -153,8 +211,8 @@ class Joint(object):
         '''
 
         self.currValue = dxl.read_word(self.socket, self.servo_id, \
-                GOALPOS_ADDR)
-        self.currAngle = 2*pi*float(self.currValue)/4096.0
+                GOALPOS_ADDR) - self.centerValue
+        self.currAngle = pi*float(self.currValue)/2048.0
         return self.currAngle
 
     def getAngle(self):

@@ -16,6 +16,12 @@ left_elbow = pj.Joint(41)
 port0.attachJoint(right_elbow)
 port0.attachJoint(left_elbow)
 
+# Set and send the maximum torques
+port0.sendMaxTorques(250)
+
+# Enable torque in all joints
+port0.enableTorques()
+
 # Set goal angles to the joints
 right_elbow.setGoalAngle(pi/2)
 left_elbow.setGoalAngle(pi/2)
