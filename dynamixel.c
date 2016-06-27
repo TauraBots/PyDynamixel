@@ -16,7 +16,7 @@ unsigned char gbRxGetLength = 0;
 int gbCommStatus = COMM_RXSUCCESS;
 int giBusUsing = 0;
 
-int dxl_initialize(char *dev_name, int baudnum)
+int initialize(char *dev_name, int baudnum)
 {
         int jointSocket;
 	float baudrate;
@@ -30,12 +30,12 @@ int dxl_initialize(char *dev_name, int baudnum)
 	return jointSocket;
 }
 
-void dxl_terminate(int socket)
+void terminate(int socket)
 {
 	dxl_hal_close(&socket);
 }
 
-void dxl_tx_packet(int jointSocket)
+void tx_packet(int jointSocket)
 {
 	unsigned char i;
 	unsigned char TxNumByte, RealTxNumByte;
@@ -94,7 +94,7 @@ void dxl_tx_packet(int jointSocket)
 	gbCommStatus = COMM_TXSUCCESS;
 }
 
-void dxl_rx_packet(int jointSocket)
+void rx_packet(int jointSocket)
 {
 	unsigned char i, j, nRead;
 	unsigned char checksum = 0;
@@ -200,47 +200,47 @@ void dxl_rx_packet(int jointSocket)
 	giBusUsing = 0;
 }
 
-void dxl_txrx_packet(int jointSocket)
+void txrx_packet(int jointSocket)
 {
-	dxl_tx_packet(jointSocket);
+	tx_packet(jointSocket);
 
 	if( gbCommStatus != COMM_TXSUCCESS )
 		return;
 
         int i = 0;
 	do{
-		dxl_rx_packet(jointSocket);
+		rx_packet(jointSocket);
                 i++;
 	}while( gbCommStatus == COMM_RXWAITING );
         //printf("Waited:%d ",i);
 }
 
-int dxl_get_result(void)
+int get_result(void)
 {
 	return gbCommStatus;
 }
 
-void dxl_set_txpacket_id( int id )
+void set_txpacket_id( int id )
 {
 	gbInstructionPacket[ID] = (unsigned char)id;
 }
 
-void dxl_set_txpacket_instruction( int instruction )
+void set_txpacket_instruction( int instruction )
 {
 	gbInstructionPacket[INSTRUCTION] = (unsigned char)instruction;
 }
 
-void dxl_set_txpacket_parameter( int index, int value )
+void set_txpacket_parameter( int index, int value )
 {
 	gbInstructionPacket[PARAMETER+index] = (unsigned char)value;
 }
 
-void dxl_set_txpacket_length( int length )
+void set_txpacket_length( int length )
 {
 	gbInstructionPacket[LENGTH] = (unsigned char)length;
 }
 
-int dxl_get_rxpacket_error( int errbit )
+int get_rxpacket_error( int errbit )
 {
 	if( gbStatusPacket[ERRBIT] & (unsigned char)errbit )
 		return 1;
@@ -248,17 +248,17 @@ int dxl_get_rxpacket_error( int errbit )
 	return 0;
 }
 
-int dxl_get_rxpacket_length(void)
+int get_rxpacket_length(void)
 {
 	return (int)gbStatusPacket[LENGTH];
 }
 
-int dxl_get_rxpacket_parameter( int index )
+int get_rxpacket_parameter( int index )
 {
 	return (int)gbStatusPacket[PARAMETER+index];
 }
 
-int dxl_makeword( int lowbyte, int highbyte )
+int makeword( int lowbyte, int highbyte )
 {
 	unsigned short word;
 
@@ -268,7 +268,7 @@ int dxl_makeword( int lowbyte, int highbyte )
 	return (int)word;
 }
 
-int dxl_get_lowbyte( int word )
+int get_lowbyte( int word )
 {
 	unsigned short temp;
 
@@ -276,7 +276,7 @@ int dxl_get_lowbyte( int word )
 	return (int)temp;
 }
 
-int dxl_get_highbyte( int word )
+int get_highbyte( int word )
 {
 	unsigned short temp;
 
@@ -285,7 +285,7 @@ int dxl_get_highbyte( int word )
 	return (int)temp;
 }
 
-void dxl_ping( int jointSocket, int id )
+void ping( int jointSocket, int id )
 {
 	while(giBusUsing);
 
@@ -293,10 +293,10 @@ void dxl_ping( int jointSocket, int id )
 	gbInstructionPacket[INSTRUCTION] = INST_PING;
 	gbInstructionPacket[LENGTH] = 2;
 
-	dxl_txrx_packet(jointSocket);
+	txrx_packet(jointSocket);
 }
 
-int dxl_read_byte(int jointSocket, int id, int address )
+int read_byte(int jointSocket, int id, int address )
 {
 	while(giBusUsing);
 
@@ -306,12 +306,12 @@ int dxl_read_byte(int jointSocket, int id, int address )
 	gbInstructionPacket[PARAMETER+1] = 1;
 	gbInstructionPacket[LENGTH] = 4;
 
-	dxl_txrx_packet(jointSocket);
+	txrx_packet(jointSocket);
 
 	return (int)gbStatusPacket[PARAMETER];
 }
 
-void dxl_write_byte(int jointSocket, int id, int address, int value )
+void write_byte(int jointSocket, int id, int address, int value )
 {
 	while(giBusUsing);
 
@@ -321,10 +321,10 @@ void dxl_write_byte(int jointSocket, int id, int address, int value )
 	gbInstructionPacket[PARAMETER+1] = (unsigned char)value;
 	gbInstructionPacket[LENGTH] = 4;
 
-	dxl_txrx_packet(jointSocket);
+	txrx_packet(jointSocket);
 }
 
-int dxl_read_word(int jointSocket, int id, int address )
+int read_word(int jointSocket, int id, int address )
 {
 	while(giBusUsing);
 
@@ -334,26 +334,26 @@ int dxl_read_word(int jointSocket, int id, int address )
 	gbInstructionPacket[PARAMETER+1] = 2;
 	gbInstructionPacket[LENGTH] = 4;
 
-	dxl_txrx_packet(jointSocket);
+	txrx_packet(jointSocket);
 
-	return dxl_makeword((int)gbStatusPacket[PARAMETER], (int)gbStatusPacket[PARAMETER+1]);
+	return makeword((int)gbStatusPacket[PARAMETER], (int)gbStatusPacket[PARAMETER+1]);
 }
 
-void dxl_write_word(int jointSocket, int id, int address, int value )
+void write_word(int jointSocket, int id, int address, int value )
 {
 	while(giBusUsing);
 
 	gbInstructionPacket[ID] = (unsigned char)id;
 	gbInstructionPacket[INSTRUCTION] = INST_WRITE;
 	gbInstructionPacket[PARAMETER] = (unsigned char)address;
-	gbInstructionPacket[PARAMETER+1] = (unsigned char)dxl_get_lowbyte(value);
-	gbInstructionPacket[PARAMETER+2] = (unsigned char)dxl_get_highbyte(value);
+	gbInstructionPacket[PARAMETER+1] = (unsigned char)get_lowbyte(value);
+	gbInstructionPacket[PARAMETER+2] = (unsigned char)get_highbyte(value);
 	gbInstructionPacket[LENGTH] = 5;
 
-	dxl_txrx_packet(jointSocket);
+	txrx_packet(jointSocket);
 }
 
-void dxl_sync_write_word(int jointSocket, int first_address,
+void sync_write_word(int jointSocket, int first_address,
                     int *ids, int *values, int total)
 {
 	while(giBusUsing);
@@ -365,13 +365,13 @@ void dxl_sync_write_word(int jointSocket, int first_address,
 	short i;
 	for(i = 0; i<total; i++){
 		gbInstructionPacket[PARAMETER+i*3+1] = (unsigned char)ids[i];
-		gbInstructionPacket[PARAMETER+i*3+2] = (unsigned char)dxl_get_lowbyte(values[i]);
-		gbInstructionPacket[PARAMETER+i*3+3] = (unsigned char)dxl_get_highbyte(values[i]);
+		gbInstructionPacket[PARAMETER+i*3+2] = (unsigned char)get_lowbyte(values[i]);
+		gbInstructionPacket[PARAMETER+i*3+3] = (unsigned char)get_highbyte(values[i]);
 	}
         // Comprimento calculato a partir de total
 	//(L+1) *N + 4
         gbInstructionPacket[LENGTH] = 5*total +4;
 
-	dxl_txrx_packet(jointSocket);
+	txrx_packet(jointSocket);
 }
 

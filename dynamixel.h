@@ -7,18 +7,18 @@ extern "C" {
 
 
 ///////////// device control methods ////////////////////////
-int dxl_initialize(char* dev_name, int baudnum);
-void dxl_terminate(int jointSocket);
+int initialize(char* dev_name, int baudnum);
+void terminate(int jointSocket);
 
 
 ///////////// set/get packet methods //////////////////////////
 #define MAXNUM_TXPARAM		(150)
 #define MAXNUM_RXPARAM		(60)
 
-void dxl_set_txpacket_id(int id);
+void set_txpacket_id(int id);
 #define BROADCAST_ID		(254)
 
-void dxl_set_txpacket_instruction(int instruction);
+void set_txpacket_instruction(int instruction);
 #define INST_PING			(1)
 #define INST_READ			(2)
 #define INST_WRITE			(3)
@@ -27,10 +27,10 @@ void dxl_set_txpacket_instruction(int instruction);
 #define INST_RESET			(6)
 #define INST_SYNC_WRITE		(131)
 
-void dxl_set_txpacket_parameter(int index, int value);
-void dxl_set_txpacket_length(int length);
+void set_txpacket_parameter(int index, int value);
+void set_txpacket_length(int length);
 
-int dxl_get_rxpacket_error(int errbit);
+int get_rxpacket_error(int errbit);
 #define ERRBIT_VOLTAGE		(1)
 #define ERRBIT_ANGLE		(2)
 #define ERRBIT_OVERHEAT		(4)
@@ -39,22 +39,22 @@ int dxl_get_rxpacket_error(int errbit);
 #define ERRBIT_OVERLOAD		(32)
 #define ERRBIT_INSTRUCTION	(64)
 
-int dxl_get_rxpacket_length(void);
-int dxl_get_rxpacket_parameter(int index);
+int get_rxpacket_length(void);
+int get_rxpacket_parameter(int index);
 
 
 // utility for value
-int dxl_makeword(int lowbyte, int highbyte);
-int dxl_get_lowbyte(int word);
-int dxl_get_highbyte(int word);
+int makeword(int lowbyte, int highbyte);
+int get_lowbyte(int word);
+int get_highbyte(int word);
 
 
 ////////// packet communication methods ///////////////////////
-void dxl_tx_packet(int);
-void dxl_rx_packet(int);
-void dxl_txrx_packet(int);
+void tx_packet(int);
+void rx_packet(int);
+void txrx_packet(int);
 
-int dxl_get_result(void);
+int get_result(void);
 #define	COMM_TXSUCCESS		(0)
 #define COMM_RXSUCCESS		(1)
 #define COMM_TXFAIL		(2)
@@ -66,12 +66,12 @@ int dxl_get_result(void);
 
 
 //////////// high communication methods ///////////////////////
-void dxl_ping(int jointSocket, int id);
-int dxl_read_byte(int jointSocket, int id, int address);
-void dxl_write_byte(int jointSocket, int id, int address, int value);
-int dxl_read_word(int jointSocket, int id, int address);
-void dxl_write_word(int jointSocket, int id, int address, int value);
-void dxl_sync_write_word(int jointSocket, int first_address, int *ids, int *values, int total);
+void ping(int jointSocket, int id);
+int read_byte(int jointSocket, int id, int address);
+void write_byte(int jointSocket, int id, int address, int value);
+int read_word(int jointSocket, int id, int address);
+void write_word(int jointSocket, int id, int address, int value);
+void sync_write_word(int jointSocket, int first_address, int *ids, int *values, int total);
 
 #ifdef __cplusplus
 }
