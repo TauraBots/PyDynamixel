@@ -36,15 +36,19 @@ torso_servo_ids = [31,32,33,34,35,36,41,42,51,52,53,61,62]
 
 # Get current positions
 for i in range(1023):
+    print "lleg:",
     for servo_id in lleg_servo_ids:
         print str(servo_id)+":"+str(dxl.read_word(lleg_socket, \
-				servo_id, CURRPOS_ADDR))
+				servo_id, CURRPOS_ADDR)),
+    print "rleg:",
     for servo_id in rleg_servo_ids:
         print str(servo_id)+":"+str(dxl.read_word(rleg_socket, \
-				servo_id, CURRPOS_ADDR))
+				servo_id, CURRPOS_ADDR)),
+    print "torso:",
     for servo_id in torso_servo_ids:
         print str(servo_id)+":"+str(dxl.read_word(torso_socket, \
-				servo_id, CURRPOS_ADDR))
+				servo_id, CURRPOS_ADDR)),
+    print
     sleep(0.001)
 
 # Finish the connection with the socket
