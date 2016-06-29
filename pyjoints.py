@@ -35,6 +35,16 @@ class DxlComm(object):
         self.baudnum = baudnum
         self.socket = dxl.initialize(commPort, baudnum)
 
+    def attachJoints(self, joints):
+        
+        ''' This method attaches several joints
+        so that the communication can be
+        handled by this class
+        '''
+
+        for joint in joints:
+            self.attachJoint(joint)
+
     def attachJoint(self, joint):
 
         ''' This method attaches a joint so
@@ -105,7 +115,7 @@ class DxlComm(object):
         dxl.sync_write_word(self.socket, TORQUE_ADDR,
                 self.servo_ids, values, self.total)
     
-    def receiveAngles(self):
+    def receiveCurrAngles(self):
 
         ''' This method read the current angle
         of all servos attached to this channel
@@ -113,8 +123,7 @@ class DxlComm(object):
         '''
 
         for joint in self.joints:
-            joint.receiveAngle()
-
+            joint.receiveCurrAngle()
 
 class Joint(object):
 
@@ -202,7 +211,7 @@ class Joint(object):
         dxl.write_word(self.socket, self.servo_id, \
                 GOALPOS_ADDR, self.goalValue)
 
-    def receiveAngle(self):
+    def receiveCurrAngle(self):
 
         ''' Reads the current position of this
         servomotor alone. The read position is
@@ -211,7 +220,7 @@ class Joint(object):
         '''
 
         self.currValue = dxl.read_word(self.socket, self.servo_id, \
-                GOALPOS_ADDR) - self.centerValue
+                CURRPOS_ADDR) - self.centerValue
         self.currAngle = pi*float(self.currValue)/2048.0
         return self.currAngle
 
