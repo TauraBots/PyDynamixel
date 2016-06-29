@@ -336,7 +336,12 @@ int read_word(int jointSocket, int id, int address )
 
 	txrx_packet(jointSocket);
 
-	return makeword((int)gbStatusPacket[PARAMETER], (int)gbStatusPacket[PARAMETER+1]);
+        if (get_result() != 1)
+        {
+          return -1;
+        } else {
+          return makeword((int)gbStatusPacket[PARAMETER], (int)gbStatusPacket[PARAMETER+1]);
+        }
 }
 
 void write_word(int jointSocket, int id, int address, int value )
