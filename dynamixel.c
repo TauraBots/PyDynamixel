@@ -2,12 +2,12 @@
 #include "dynamixel.h"
 #include <stdio.h>
 
-#define ID					(2)
+#define ID				(2)
 #define LENGTH				(3)
 #define INSTRUCTION			(4)
 #define ERRBIT				(4)
 #define PARAMETER			(5)
-#define DEFAULT_BAUDNUMBER	(1)
+#define DEFAULT_BAUDNUMBER	        (1)
 
 unsigned char gbInstructionPacket[MAXNUM_TXPARAM+10] = {0};
 unsigned char gbStatusPacket[MAXNUM_RXPARAM+10] = {0};
@@ -367,16 +367,23 @@ void sync_write_word(int jointSocket, int first_address,
 	gbInstructionPacket[INSTRUCTION] = INST_SYNC_WRITE;
 
 	gbInstructionPacket[PARAMETER] = (unsigned char)first_address;
+	gbInstructionPacket[PARAMETER+1] = (unsigned char)2;
 	short i;
 	for(i = 0; i<total; i++){
-		gbInstructionPacket[PARAMETER+i*3+1] = (unsigned char)ids[i];
-		gbInstructionPacket[PARAMETER+i*3+2] = (unsigned char)get_lowbyte(values[i]);
-		gbInstructionPacket[PARAMETER+i*3+3] = (unsigned char)get_highbyte(values[i]);
+		gbInstructionPacket[PARAMETER+i*3+2] = (unsigned char)ids[i];
+		gbInstructionPacket[PARAMETER+i*3+3] = (unsigned char)get_lowbyte(values[i]);
+		gbInstructionPacket[PARAMETER+i*3+4] = (unsigned char)get_highbyte(values[i]);
+		//printf("%d:%d, ", ids[i], values[i]);
 	}
+	//printf("\n");
         // Comprimento calculato a partir de total
 	//(L+1) *N + 4
-        gbInstructionPacket[LENGTH] = 5*total +4;
-
+        gbInstructionPacket[LENGTH] = 3 * total + 4;
+	//for (i = 0 ; i < 3*total+7 ; i++)
+	//{
+	//	printf("%d ", gbInstructionPacket[i]);
+	//}
+	//printf("\n");
 	txrx_packet(jointSocket);
 }
 
