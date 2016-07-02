@@ -113,7 +113,7 @@ class DxlComm(object):
 
         values = [0]*self.total
         dxl.sync_write_word(self.socket, TORQUE_ADDR,
-                self.servo_ids, values, self.total)
+                self.joint_ids, values, self.total)
     
     def receiveCurrAngles(self):
 
