@@ -101,9 +101,17 @@ class DxlComm(object):
         in this port.
         '''
 
-        values = [1]*self.total
-        dxl.sync_write_word(self.socket, TORQUE_ADDR,
+	if self.total <= 26:
+          values = [1]*self.total
+          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
                 self.joint_ids, values, self.total)
+        else:
+          values = [1]*26
+          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
+                self.joint_ids[:26], values[:26], 26)
+          values = [1]*(self.total - 26)
+          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
+                self.joint_ids[26:], values[26:], self.total - 26)
 
     def disableTorques(self):
 
@@ -111,9 +119,17 @@ class DxlComm(object):
         to this port
         '''
 
-        values = [0]*self.total
-        dxl.sync_write_word(self.socket, TORQUE_ADDR,
+	if self.total <= 26:
+          values = [0]*self.total
+          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
                 self.joint_ids, values, self.total)
+        else:
+          values = [0]*26
+          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
+                self.joint_ids[:26], values[:26], 26)
+          values = [0]*(self.total - 26)
+          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
+                self.joint_ids[26:], values[26:], self.total - 26)
     
     def receiveCurrAngles(self):
 
