@@ -95,23 +95,26 @@ class DxlComm(object):
         dxl.sync_write_word(self.socket, MAXTORQUE_ADDR,
                 self.joint_ids, values, self.total)
 
+    def _syncWrite(self, socket, addr, ids, values):
+        total = len(ids)
+        if total <= 20:
+            dxl.sync_write_word(socket, addr,\
+                  ids, values, total)
+        else:
+            dxl.sync_write_word(socket, addr,\
+                  ids[:20], values[:20], 20)
+            dxl.sync_write_word(socket, addr,\
+                  ids[20:], values[20:], total - 20)
+
     def enableTorques(self):
 
         ''' Enable torque for all motors connected
         in this port.
         '''
 
-	if self.total <= 20:
-          values = [1]*self.total
-          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
-                self.joint_ids, values, self.total)
-        else:
-          values = [1]*20
-          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
-                self.joint_ids[:20], values[:20], 20)
-          values = [1]*(self.total - 20)
-          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
-                self.joint_ids[20:], values[20:], self.total - 20)
+        values = [1]*self.total
+	self._syncWrite(self.socket, TORQUE_ADDR, \
+                self.joint_ids, values)
 
     def disableTorques(self):
 
@@ -119,18 +122,10 @@ class DxlComm(object):
         to this port
         '''
 
-	if self.total <= 20:
-          values = [0]*self.total
-          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
-                self.joint_ids, values, self.total)
-        else:
-          values = [0]*20
-          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
-                self.joint_ids[:20], values[:20], 20)
-          values = [0]*(self.total - 20)
-          dxl.sync_write_word(self.socket, TORQUE_ADDR,\
-                self.joint_ids[20:], values[20:], self.total - 20)
-    
+        values = [0]*self.total
+	self._syncWrite(self.socket, TORQUE_ADDR, \
+                self.joint_ids, values)
+
     def receiveCurrAngles(self):
 
         ''' This method read the current angle
