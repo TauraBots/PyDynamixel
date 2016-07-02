@@ -98,9 +98,12 @@ class DxlComm(object):
     def _syncWrite(self, socket, addr, ids, values):
         total = len(ids)
         if total <= 20:
+            print "_syncWrite <= 20", socket, addr, ids, values
             dxl.sync_write_word(socket, addr,\
                   ids, values, total)
         else:
+            print "_syncWrite > 20", socket, addr, ids[:20], values[:20]
+            print "_syncWrite > 20", socket, addr, ids[20:], values[20:]
             dxl.sync_write_word(socket, addr,\
                   ids[:20], values[:20], 20)
             dxl.sync_write_word(socket, addr,\
