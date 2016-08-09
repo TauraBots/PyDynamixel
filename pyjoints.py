@@ -1,6 +1,7 @@
 import pydynamixel as dxl
 from math import pi
 
+BROADCAST_ID = 0xFE # ID for all servos
 TORQUE_ADDR = 0x18 # Address for torque enable
 CURRPOS_ADDR = 0x24 # Address for the current position
 GOALPOS_ADDR = 0x1E # Address for goal position
@@ -20,7 +21,7 @@ class DxlComm(object):
     joint_ids = [] # Database of servomotor ids
     total = 0 # Total number of attached joints
 
-    def __init__(self, commPort, baudnum = 8):
+    def __init__(self, commPort, baudnum = 1):
 
         ''' The argument commPort should be
         the path to the serial device.
@@ -28,7 +29,7 @@ class DxlComm(object):
         a baudnum argument:
            baudrate = 2Mbps / (baudnum + 1)
         If no baudnum is provided, then the
-        default is 8, resulting 222.22kbps
+        default is 1, resulting 1Mbps
         '''
 
         self.commPort = commPort
@@ -36,7 +37,7 @@ class DxlComm(object):
         self.socket = dxl.initialize(commPort, baudnum)
 
     def attachJoints(self, joints):
-        
+
         ''' This method attaches several joints
         so that the communication can be
         handled by this class
@@ -114,20 +115,15 @@ class DxlComm(object):
         ''' Enable torque for all motors connected
         in this port.
         '''
-
-        values = [1]*self.total
-	self._syncWrite(self.socket, TORQUE_ADDR, \
-                self.joint_ids, values)
-
+        dxl.write_byte(self.socket, BROADCAST_ID, TORQUE_ADDR, 1)
     def disableTorques(self):
 
         ''' Disables torque for all motors connected
         to this port
         '''
+        dxl.write_byte(self.socket, BROADCAST_ID, TORQUE_ADDR, 0)
 
-        values = [0]*self.total
-	self._syncWrite(self.socket, TORQUE_ADDR, \
-                self.joint_ids, values)
+
 
     def receiveCurrAngles(self):
 
@@ -258,4 +254,3 @@ class Joint(object):
 
         dxl.write_byte(self.socket, self.servo_id, \
                 TORQUE_ADDR, 0)
-
