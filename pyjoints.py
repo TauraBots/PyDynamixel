@@ -1,5 +1,6 @@
 import pydynamixel as dxl
 from math import pi
+from os import system
 
 BROADCAST_ID = 0xFE # ID for all servos
 TORQUE_ADDR = 0x18 # Address for torque enable
@@ -31,10 +32,13 @@ class DxlComm(object):
         If no baudnum is provided, then the
         default is 1, resulting 1Mbps
         '''
-
+	
         self.commPort = commPort
         self.baudnum = baudnum
         self.socket = dxl.initialize(commPort, baudnum)
+	command = "stty -F " + commPort + " " + str(2000000/(baudnum+1))
+	print command	
+	system(command)
 
     def attachJoints(self, joints):
 
