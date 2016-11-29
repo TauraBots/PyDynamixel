@@ -37,7 +37,6 @@ class DxlComm(object):
         self.baudnum = baudnum
         self.socket = dxl.initialize(commPort, baudnum)
 	command = "stty -F " + commPort + " " + str(2000000/(baudnum+1))
-	print command	
 	system(command)
 
     def attachJoints(self, joints):
@@ -79,9 +78,12 @@ class DxlComm(object):
         servos connected to this port
         '''
 
-        values = [j.goalValue for j in self.joints]
+        values = [j.goalValue for j in self.joints if j.changed]
         dxl.sync_write_word(self.socket, GOALPOS_ADDR,
                 self.joint_ids, values, self.total)
+
+        for i in self.joints:
+            i.changed = False
 
     def sendMaxTorques(self, maxTorque = None):
 
@@ -153,6 +155,7 @@ class Joint(object):
     currValue = 0
     centerValue = 0
     maxTorque = 767 # This is the maximum
+    changed = False
 
     def __init__(self, servo_id, centerValue = 0):
 
@@ -211,6 +214,7 @@ class Joint(object):
         self.goalAngle = float(angle)
         self.goalValue = int(2048.0*angle/pi) \
                 + self.centerValue
+        self.changed = True
 
     def sendGoalAngle(self, goalAngle = None):
         ''' Sends a command to this specific
@@ -222,8 +226,10 @@ class Joint(object):
 
         if goalAngle:
             self.setGoalAngle(goalAngle)
-        dxl.write_word(self.socket, self.servo_id, \
-                GOALPOS_ADDR, self.goalValue)
+        if self.changed:
+            dxl.write_word(self.socket, self.servo_id, \
+                    GOALPOS_ADDR, self.goalValue)
+        self.changed = False
 
     def receiveCurrAngle(self):
 
