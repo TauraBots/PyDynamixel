@@ -1,13 +1,20 @@
-import pydynamixel as dxl
 from math import pi
 from os import system
 
-BROADCAST_ID = 0xFE # ID for all servos
-TORQUE_ADDR = 0x18 # Address for torque enable
-CURRPOS_ADDR = 0x24 # Address for the current position
-GOALPOS_ADDR = 0x1E # Address for goal position
-MAXTORQUE_ADDR = 0x0E # Address for maximum torque
+os.sys.path.append('dynamixel')
+import dynamixel_functions as dxl
+
+ADDR_MX_TORQUE_ENABLE = 0x18 # Address for torque enable
+ADDR_MX_PRESENT_POSITION = 0x24 # Address for the current position
+ADDR_MX_GOAL_POSITION = 0x1E # Address for goal position
+MAXADDR_MX_TORQUE_ENABLE = 0x0E # Address for maximum torque
 MAXTORQUELIMIT = 767 # Maximum torque possible
+
+PROTOCOL_VERSION            = 1
+COMM_SUCCESS                = 0                             # Communication Success result value
+COMM_TX_FAIL                = -1001                         # Communication Tx Failed
+
+BROADCAST_ID = 254
 
 class DxlComm(object):
     ''' This class implements low level
@@ -17,6 +24,7 @@ class DxlComm(object):
 
     commPort = None # path to default serial port
     baudnum = None # baudrate=2Mbps/(baudnum+1)
+    baudRate = None
     socket = None # stores the socket number
     joints = [] # Database of attached joints
     joint_ids = [] # Database of servomotor ids
@@ -35,9 +43,13 @@ class DxlComm(object):
 	
         self.commPort = commPort
         self.baudnum = baudnum
-        self.socket = dxl.initialize(commPort, baudnum)
-	command = "stty -F " + commPort + " " + str(2000000/(baudnum+1))
-	system(command)
+        self.baudRate = 2000000/(baudnum+1)
+        self.socket = dxl.portHandler(self.commPort.encode('utf-8'))
+        dxl.packetHandler()
+        if dxl.openPort(self.socket):
+            print("Port Open Success")
+        if dxl.setBaudRate(self.socket, self.baudRate):
+            printf("Port Baud Set Success")
 
     def attachJoints(self, joints):
 
@@ -70,7 +82,7 @@ class DxlComm(object):
         open socket
         '''
 
-        dxl.terminate(self.socket)
+        dxl.closePort(self.socket)
 
     def sendGoalAngles(self):
 
@@ -78,9 +90,7 @@ class DxlComm(object):
         servos connected to this port
         '''
 
-        values = [j.goalValue for j in self.joints if j.changed]
-        dxl.sync_write_word(self.socket, GOALPOS_ADDR,
-                self.joint_ids, values, self.total)
+        self._syncWrite(self.joints, ADDR_MX_GOAL_POSITION, 2)
 
         for i in self.joints:
             i.changed = False
@@ -99,29 +109,28 @@ class DxlComm(object):
                 j.setMaxTorque(maxTorque)
 
         values = [j.maxTorque for j in self.joints]
-        dxl.sync_write_word(self.socket, MAXTORQUE_ADDR,
-                self.joint_ids, values, self.total)
+        self._syncWrite(joints, MAXADDR_MX_TORQUE_ENABLE, 2)
 
-    def _syncWrite(self, socket, addr, ids, values):
-        total = len(ids)
-        if total <= 20:
-            print "_syncWrite <= 20", socket, addr, ids, values
-            dxl.sync_write_word(socket, addr,\
-                  ids, values, total)
-        else:
-            print "_syncWrite > 20", socket, addr, ids[:20], values[:20]
-            print "_syncWrite > 20", socket, addr, ids[20:], values[20:]
-            dxl.sync_write_word(socket, addr,\
-                  ids[:20], values[:20], 20)
-            dxl.sync_write_word(socket, addr,\
-                  ids[20:], values[20:], total - 20)
+    def _syncWrite(self, servos, addr, info_len):
+
+        ''' this is an adaptation from dynamixel's sdk for
+            the sync_write '''
+        SW = dxl.groupSyncWrite(self.socket, PROTOCOL_VERSION, addr, info_len)
+        for s in servos:
+            dxl.groupSyncWriteAddParam(SW, s.servo_id, s.goalValue, info_len)
+
+        dxl.groupSyncWriteTxPacket(SW) #does the sync write
+        dxl.groupSyncWriteClearParam(SW) #clears buffer
+
 
     def enableTorques(self):
 
         ''' Enable torque for all motors connected
         in this port.
         '''
-        dxl.write_byte(self.socket, BROADCAST_ID, TORQUE_ADDR, 1)
+        dxl.write1ByteTxRx(self.socket, PROTOCOL_VERSION, BROADCAST_ID, \
+                ADDR_MX_TORQUE_ENABLE, 1)
+
     def disableTorques(self):
 
         ''' Disables torque for all motors connected
@@ -129,6 +138,8 @@ class DxlComm(object):
         '''
         dxl.write_byte(self.socket, BROADCAST_ID, TORQUE_ADDR, 0)
 
+        dxl.write1ByteTxRx(self.socket, PROTOCOL_VERSION, BROADCAST_ID, \
+                ADDR_MX_TORQUE_ENABLE, 0)
 
 
     def receiveCurrAngles(self):
@@ -206,8 +217,8 @@ class Joint(object):
 
         if maxTorque:
             self.setMaxTorque(maxTorque)
-        dxl.write_word(self.socket, self.servo_id, \
-                MAXTORQUE_ADDR, self.maxTorque)
+        dxl.write2ByteTxRx(self.socket, PROTOCOL_VERSION, \
+                self.servo_id, MAXADDR_MX_TORQUE_ENABLE, self.maxTorque)
 
     def setGoalAngle(self, angle):
 
@@ -226,10 +237,8 @@ class Joint(object):
 
         if goalAngle:
             self.setGoalAngle(goalAngle)
-        if self.changed:
-            dxl.write_word(self.socket, self.servo_id, \
-                    GOALPOS_ADDR, self.goalValue)
-        self.changed = False
+        dxl.write2ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, \
+                ADDR_MX_GOAL_POSITION, self.goalValue)
 
     def receiveCurrAngle(self):
 
@@ -239,8 +248,8 @@ class Joint(object):
         getAngle()
         '''
 
-        self.currValue = dxl.read_word(self.socket, self.servo_id, \
-                CURRPOS_ADDR) - self.centerValue
+        self.currValue = dxl.read2ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, \
+                ADDR_MX_PRESENT_POSITION) - self.centerValue
         self.currAngle = pi*float(self.currValue)/2048.0
         return self.currAngle
 
@@ -255,12 +264,12 @@ class Joint(object):
         ''' Enables torque in this joint
         '''
 
-        dxl.write_byte(self.socket, self.servo_id, \
-                TORQUE_ADDR, 1)
+        dxl.write1ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, \
+                ADDR_MX_TORQUE_ENABLE, 1)
 
     def disableTorque(self):
         ''' Disables torque in this joint
         '''
 
-        dxl.write_byte(self.socket, self.servo_id, \
-                TORQUE_ADDR, 0)
+        dxl.write1ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, \
+                ADDR_MX_TORQUE_ENABLE, 0)
