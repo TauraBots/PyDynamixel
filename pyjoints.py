@@ -1,7 +1,8 @@
 from math import pi
+import sys 
 from os import system
 
-os.sys.path.append('dynamixel')
+sys.path.append('/home/jio/workspace/PyDynamixel/dynamixel')
 import dynamixel_functions as dxl
 
 ADDR_MX_TORQUE_ENABLE = 0x18 # Address for torque enable
@@ -30,7 +31,7 @@ class DxlComm(object):
     joint_ids = [] # Database of servomotor ids
     total = 0 # Total number of attached joints
 
-    def __init__(self, commPort, baudnum = 1):
+    def __init__(self, commPort="/dev/ttyUSB0", baudnum = 1):
 
         ''' The argument commPort should be
         the path to the serial device.
@@ -49,7 +50,7 @@ class DxlComm(object):
         if dxl.openPort(self.socket):
             print("Port Open Success")
         if dxl.setBaudRate(self.socket, self.baudRate):
-            printf("Port Baud Set Success")
+            print("Port Baud Set Success")
 
     def attachJoints(self, joints):
 
@@ -90,9 +91,11 @@ class DxlComm(object):
         servos connected to this port
         '''
 
-        self._syncWrite(self.joints, ADDR_MX_GOAL_POSITION, 2)
+        chJoints = [j for j in self.joints if j.changed is True]
 
-        for i in self.joints:
+        self._syncWrite(chJoints, ADDR_MX_GOAL_POSITION, 2)
+
+        for i in chJoints:
             i.changed = False
 
     def sendMaxTorques(self, maxTorque = None):
@@ -136,7 +139,6 @@ class DxlComm(object):
         ''' Disables torque for all motors connected
         to this port
         '''
-        dxl.write_byte(self.socket, BROADCAST_ID, TORQUE_ADDR, 0)
 
         dxl.write1ByteTxRx(self.socket, PROTOCOL_VERSION, BROADCAST_ID, \
                 ADDR_MX_TORQUE_ENABLE, 0)
@@ -273,3 +275,26 @@ class Joint(object):
 
         dxl.write1ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, \
                 ADDR_MX_TORQUE_ENABLE, 0)
+
+
+
+    '''These methods are for reading and writing directly from and to a specific address
+        If possible, don't use these.
+        They are intended to be used for changing servo addresses, and stuff like this.
+        '''
+
+    def readValue(self, address, size=1):
+        if(size==1):
+            v = dxl.read1ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, address)
+        elif(size==2):
+            v = dxl.read2ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, address)
+
+        return v
+
+    def writeValue(self, address, value, size=1):
+        if(size==1):
+            dxl.write1ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, \
+                address, value)
+        elif(size==2):
+            dxl.write2ByteTxRx(self.socket, PROTOCOL_VERSION, self.servo_id, \
+                address, value)
