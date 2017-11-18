@@ -1,11 +1,10 @@
 from math import pi
-import sys 
-from os import system
+import sys
 
 sys.path.append('/home/jio/workspace/PyDynamixel/dynamixel')
 import dynamixel_functions as dxl
 
-ADDR_MX_TORQUE_ENABLE = 0x18 # Address for torque enable
+ADDR_MX_TORQUE_ENABLE = 0x18  # Address for torque enable
 ADDR_MX_PRESENT_POSITION = 0x24 # Address for the current position
 ADDR_MX_GOAL_POSITION = 0x1E # Address for goal position
 MAXADDR_MX_TORQUE_ENABLE = 0x0E # Address for maximum torque
@@ -41,7 +40,7 @@ class DxlComm(object):
         If no baudnum is provided, then the
         default is 1, resulting 1Mbps
         '''
-	
+
         self.commPort = commPort
         self.baudnum = baudnum
         self.baudRate = 2000000/(baudnum+1)
@@ -112,15 +111,18 @@ class DxlComm(object):
                 j.setMaxTorque(maxTorque)
 
         values = [j.maxTorque for j in self.joints]
-        self._syncWrite(joints, MAXADDR_MX_TORQUE_ENABLE, 2)
+        self._syncWrite(self.joints, MAXADDR_MX_TORQUE_ENABLE, 2, values)
 
-    def _syncWrite(self, servos, addr, info_len):
+    def _syncWrite(self, servos, addr, info_len, values=None):
 
         ''' this is an adaptation from dynamixel's sdk for
             the sync_write '''
         SW = dxl.groupSyncWrite(self.socket, PROTOCOL_VERSION, addr, info_len)
-        for s in servos:
-            dxl.groupSyncWriteAddParam(SW, s.servo_id, s.goalValue, info_len)
+        for i, s in enumerate(servos):
+            if(values is None):
+                dxl.groupSyncWriteAddParam(SW, s.servo_id, s.goalValue, info_len)
+            else:
+                dxl.groupSyncWriteAddParam(SW, s.servo_id, values[i], info_len)
 
         dxl.groupSyncWriteTxPacket(SW) #does the sync write
         dxl.groupSyncWriteClearParam(SW) #clears buffer
